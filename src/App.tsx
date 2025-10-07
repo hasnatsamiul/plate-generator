@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useEffect, useRef } from "react";
+import { useCallback, useMemo, useEffect, useRef } from "react";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import type { Plate, LocaleFlavor } from "./types";
 import { detectLocale } from "./utils/locale";
@@ -132,7 +132,7 @@ export default function App() {
 
   // ---- Unit conversion ----
   const cmToIn = (cm: number) => cm / 2.54;
-  const inToCm = (inch: number) => inch * 2.54;
+  // const inToCm = (inch: number) => inch * 2.54;
   const toDisplay = (cm: number) => (state.unit === "in" ? cmToIn(cm) : cm);
 
   return (
