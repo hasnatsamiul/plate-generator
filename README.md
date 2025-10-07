@@ -8,7 +8,7 @@ Developed as part of the Rueckwand24 Frontend Technical Assessment.
 
 ## Live Demo
 
-**[https://plate-generator.vercel.app](https://plate-generator.vercel.app)**
+**https://plate-generator-umber.vercel.app/**
 
 _(Deployed on Vercel)_
 
