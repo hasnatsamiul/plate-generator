@@ -221,3 +221,32 @@ footer { padding: 10px 20px; color: var(--muted); }
 }
 
 
+/* Stack layout on phones/tablets */
+@media (max-width: 820px) {
+  .split {
+    flex-direction: column;        /* stack */
+    gap: 16px;
+  }
+
+  .left, .right, .right-panel {
+    width: 100%;
+    min-width: 0;                  /* prevent overflow */
+  }
+
+  /* Give the preview area a predictable height so the canvas can size itself */
+  .left {
+    /* choose one of these: aspect-ratio is simplest if supported */
+    aspect-ratio: 16 / 10;         /* keeps a nice card shape */
+    min-height: 220px;             /* never too small */
+  }
+
+  /* If you prefer not to use aspect-ratio, comment it out and use a vw height:
+     height: 56vw; min-height: 220px; max-height: 60vh; */
+
+  /* Make buttons/controls breathe a bit on mobile */
+  .right .group, .right-panel .group { margin-left: 0; margin-right: 0; }
+  .title { margin-left: 4px; }
+}
+
+
+
