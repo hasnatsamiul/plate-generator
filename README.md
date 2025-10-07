@@ -14,6 +14,13 @@ _(Deployed on Vercel)_
 
 ---
 
+## Demo Video
+
+
+https://github.com/user-attachments/assets/fded4de3-9d48-4bd4-bb64-272b3d2d50b9
+
+
+
 ## Features
 
 - **Automatic Default Plate**
@@ -101,3 +108,4 @@ npm run build
 # 5. Preview production build
 npm run preview
 ```
+
