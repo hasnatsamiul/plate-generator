@@ -8,21 +8,18 @@ import {
 } from "react";
 import type { Plate } from "../types";
 
-
-
 // Remote default motif
 const DEFAULT_MOTIF =
   "https://rueckwand24.com/cdn/shop/files/Kuechenrueckwand-Kuechenrueckwand-Gruene-frische-Kraeuter-KR-000018-HB.jpg?v=1695288356&width=1200";
+
+//Otherwise from local storage
 const fallbackMotif = "/motif-fallback.jpg";
 const OUTER_PAD = 24;
 const GAP_PX = 8;
-// const STAGGER_PX = 0;
-const CARD_W_RATIO = 1.0;  // gray card almost full width
-const CARD_H_RATIO = 0.95; // gray card tall
 
 type Props = {
   plates: Plate[];
-  motifSrc?: string | null; // user upload (blob url) or undefined
+  motifSrc?: string | null;
 };
 
 export type PlateCanvasHandle = {
@@ -31,27 +28,23 @@ export type PlateCanvasHandle = {
 
 type MotifSource = "user" | "remote" | "local" | "none";
 
-/* ------------------------- image loading helpers ------------------------- */
-
+/* ---------- image loading helpers ----------- */
 function loadImageWithTimeout(
   src: string,
   { cors, timeoutMs = 6000 }: { cors: boolean; timeoutMs?: number }
 ): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    if (cors) img.crossOrigin = "anonymous"; // avoids taint if server allows CORS
-
+    if (cors) img.crossOrigin = "anonymous";
     const timer = setTimeout(() => {
       cleanup();
       reject(new Error("image load timeout"));
     }, timeoutMs);
-
     function cleanup() {
       clearTimeout(timer);
       img.onload = null;
       img.onerror = null;
     }
-
     img.onload = () => {
       cleanup();
       resolve(img);
@@ -64,36 +57,28 @@ function loadImageWithTimeout(
   });
 }
 
-/** Try user motif (if any) → remote default → local bundled fallback. Returns img + where it came from. */
 async function loadMotifChainDetailed(
   userSrc?: string | null
 ): Promise<{ img: HTMLImageElement | null; source: MotifSource }> {
-  // 1) user upload / blob url (cors harmless)
   if (userSrc) {
     try {
-      const img = await loadImageWithTimeout(userSrc, { cors: true, timeoutMs: 7000 });
+      const img = await loadImageWithTimeout(userSrc, { cors: true });
       return { img, source: "user" };
-    } catch {
-      // continue
-    }
+    } catch {}
   }
-  // 2) remote default (may fail due to CORS/network)
   try {
-    const img = await loadImageWithTimeout(DEFAULT_MOTIF, { cors: true, timeoutMs: 7000 });
+    const img = await loadImageWithTimeout(DEFAULT_MOTIF, { cors: true });
     return { img, source: "remote" };
-  } catch {
-    // continue
-  }
-  // 3) local bundled fallback (always available)
+  } catch {}
   try {
-    const img = await loadImageWithTimeout(fallbackMotif, { cors: false, timeoutMs: 7000 });
+    const img = await loadImageWithTimeout(fallbackMotif, { cors: false });
     return { img, source: "local" };
   } catch {
     return { img: null, source: "none" };
   }
 }
 
-/* ----------------------------- component ----------------------------- */
+/* -------------------- component ----------------------- */
 
 const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, ref) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -101,7 +86,6 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [motifSource, setMotifSource] = useState<MotifSource>("none");
 
-  // Safe export: return null if canvas is tainted (CORS) or unavailable
   useImperativeHandle(ref, () => ({
     exportPNG: () => {
       try {
@@ -112,7 +96,6 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
     },
   }));
 
-  // Load motif with fallback chain
   useEffect(() => {
     let alive = true;
     loadMotifChainDetailed(motifSrc)
@@ -131,7 +114,6 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
     };
   }, [motifSrc]);
 
-  // Observe wrapper size
   const [containerSize, setContainerSize] = useState({ w: 800, h: 500 });
   useEffect(() => {
     const el = wrapperRef.current!;
@@ -155,8 +137,6 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
     if (!canvas || !ctx) return;
 
     const DPR = Math.min(2, window.devicePixelRatio || 1);
-
-    // Canvas size matches wrapper (gray card is fixed fraction of this)
     const cssW = Math.max(200, containerSize.w);
     const cssH = Math.max(220, containerSize.h);
     canvas.style.width = `${cssW}px`;
@@ -168,57 +148,59 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
     ctx.scale(DPR, DPR);
     ctx.clearRect(0, 0, cssW, cssH);
 
-    // Gray card (fixed relative size)
-    const cardW = Math.floor(cssW * CARD_W_RATIO);
-    const cardH = Math.floor(cssH * CARD_H_RATIO);
-    const x0 = Math.floor((cssW - cardW) / 2);
-    const y0 = Math.floor((cssH - cardH) / 2);
-
-    roundRect(ctx, x0, y0, cardW, cardH, 16);
-    const grad = ctx.createLinearGradient(0, y0, 0, y0 + cardH);
-    grad.addColorStop(0, "#f7f7f9");
-    grad.addColorStop(1, "#e6e7eb");
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.12)";
-    ctx.shadowBlur = 16;
-    ctx.shadowOffsetY = 8;
-    roundRect(ctx, x0, y0, cardW, cardH, 16);
-    ctx.strokeStyle = "rgba(0,0,0,0.02)";
-    ctx.stroke();
-    ctx.restore();
-
-    // Usable area inside card
-    const ix = x0 + OUTER_PAD;
-    const iy = y0 + OUTER_PAD;
-    const usableW = cardW - OUTER_PAD * 2;
-    const usableH = cardH - OUTER_PAD * 2;
-
-    // Plate scaling inside fixed card
+    // Calculate plate-based gray area
     const totalWcm = Math.max(1, metrics.totalWcm);
     const maxHcm = Math.max(1, metrics.maxHcm);
     const gapsPx = GAP_PX * Math.max(0, plates.length - 1);
-
-    const scaleByW = (usableW - gapsPx) / totalWcm;
-    const scaleByH = usableH / maxHcm;
+    const availW = cssW - OUTER_PAD * 2;
+    const availH = cssH - OUTER_PAD * 2;
+    const scaleByW = (availW - gapsPx) / totalWcm;
+    const scaleByH = availH / maxHcm;
     const scale = Math.max(0.1, Math.min(scaleByW, scaleByH));
-
     const innerW = totalWcm * scale + gapsPx;
     const innerH = maxHcm * scale;
 
+    const x0 = (cssW - innerW) / 2 - OUTER_PAD / 2;
+    const y0 = (cssH - innerH) / 2 - OUTER_PAD / 2;
+    const cardW = innerW + OUTER_PAD;
+    const cardH = innerH + OUTER_PAD;
+
+    // Soft shadow for the gray area (makes it more realistic)
+    ctx.save();
+    ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 10;
+    roundRect(ctx, x0, y0, cardW, cardH, 18);
+    ctx.fillStyle = "#f1f2f4";
+    ctx.fill();
+    ctx.restore();
+
+    // Light gradient fill for realism
+    roundRect(ctx, x0, y0, cardW, cardH, 18);
+    const grad = ctx.createLinearGradient(0, y0, 0, y0 + cardH);
+    grad.addColorStop(0, "#fafafa");
+    grad.addColorStop(1, "#e3e5e9");
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Inner stroke (soft)
+    ctx.save();
+    roundRect(ctx, x0, y0, cardW, cardH, 18);
+    ctx.strokeStyle = "rgba(0,0,0,0.08)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+
+    const ix = x0 + OUTER_PAD / 2;
+    const iy = y0 + OUTER_PAD / 2;
+
     if (img) {
-      // Offscreen motif strip
       const off = document.createElement("canvas");
       off.width = Math.max(1, Math.round(totalWcm * scale));
       off.height = Math.max(1, Math.round(innerH));
       const o = off.getContext("2d")!;
-
       const tileH = off.height;
       const tileW = Math.max(1, Math.round((img.naturalWidth * tileH) / img.naturalHeight));
-
-      // center-first tiling with mirroring for seamless extension
       const centerX = Math.floor(off.width / 2 - tileW / 2);
       drawTile(o, img, centerX, 0, tileW, tileH, false);
       let L = centerX, R = centerX + tileW, i = 1;
@@ -231,41 +213,25 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
         L -= tileW; R += tileW; i++;
       }
 
-      // Center plates block inside card
-      const startX = Math.floor(ix + (usableW - innerW) / 2);
-      const startY = Math.floor(iy + (usableH - innerH) / 2);
-
       let acc = 0;
+      const baselineY = iy + innerH;
       plates.forEach((p, idx) => {
-        const w = Math.max(0, p.widthCm * scale);
-        const h = Math.max(0, p.heightCm * scale);
+        const w = p.widthCm * scale;
+        const h = p.heightCm * scale;
+        const sx = acc;
+        const sy = off.height - h;
+        const dx = ix + acc + GAP_PX * idx;
+        const dy = baselineY - h;
 
-        const sx = Math.floor(acc);
-        // const sy = Math.floor((off.height - h) / 2);
-        const sy = Math.max(0, Math.floor(off.height - h));
-
-        const dx = Math.floor(startX + acc + GAP_PX * idx);
-        // const dy = Math.floor(startY + (off.height - h) / 2 + (idx > 0 ? STAGGER_PX : 0));
-        const baselineY = startY + innerH;        // bottom of the inner area
-        const dy = Math.floor(baselineY - h);
-
-        // plate with shadow
         ctx.save();
         roundedClip(ctx, dx, dy, w, h, 10);
-        ctx.shadowColor = "rgba(0,0,0,0.25)";
-        ctx.shadowBlur = 12;
-        ctx.shadowOffsetY = 6;
-        ctx.fillStyle = "rgba(0,0,0,0)";
-        ctx.fillRect(dx, dy, w, h);
-        ctx.shadowColor = "transparent";
-
-        ctx.drawImage(off, sx, sy, Math.floor(w), Math.floor(h), dx, dy, Math.floor(w), Math.floor(h));
+        ctx.drawImage(off, sx, sy, w, h, dx, dy, w, h);
         ctx.restore();
 
-        // border
+        // Plate border
         ctx.save();
         roundRect(ctx, dx, dy, w, h, 10);
-        ctx.strokeStyle = "rgba(0,0,0,0.12)";
+        ctx.strokeStyle = "rgba(0,0,0,0.18)";
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.restore();
@@ -273,17 +239,13 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
         acc += p.widthCm * scale;
       });
     } else {
-      // If nothing loaded, draw a centered placeholder area
-      const startX = Math.floor(ix + (usableW - innerW) / 2);
-      const startY = Math.floor(iy + (usableH - innerH) / 2);
       ctx.fillStyle = "#cfd3d9";
-      ctx.fillRect(startX, startY, innerW, innerH);
+      ctx.fillRect(ix, iy, innerW, innerH);
     }
   }, [plates, img, containerSize, metrics]);
 
   return (
     <div className="left" ref={wrapperRef} style={{ position: "relative" }}>
-      {/* Badge: show only when we fell back to local image */}
       {motifSource === "local" && (
         <div
           style={{
@@ -298,11 +260,9 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
             padding: "6px 8px",
             borderRadius: 8,
             pointerEvents: "none",
-            maxWidth: "60%",
-            lineHeight: 1.2,
           }}
         >
-          Remote motif is not working, using local image.
+          Remote motif not available — using local image
         </div>
       )}
       <canvas ref={canvasRef} />
@@ -313,15 +273,7 @@ const PlateCanvas = forwardRef<PlateCanvasHandle, Props>(({ plates, motifSrc }, 
 export default PlateCanvas;
 
 /* ---------------- helpers ---------------- */
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const rr = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
   ctx.moveTo(x + rr, y);
@@ -331,29 +283,12 @@ function roundRect(
   ctx.arcTo(x, y, x + w, y, rr);
   ctx.closePath();
 }
-
-function roundedClip(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
+function roundedClip(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   roundRect(ctx, x, y, w, h, r);
   ctx.save();
   ctx.clip();
 }
-
-function drawTile(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  mirror: boolean
-) {
+function drawTile(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number, mirror: boolean) {
   ctx.save();
   if (mirror) {
     ctx.translate(x + w / 2, 0);

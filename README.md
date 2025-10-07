@@ -1,73 +1,103 @@
-# React + TypeScript + Vite
+# Plate Generator System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A responsive web application for configuring and visualizing custom wall plates.  
+Users can add, resize, reorder, and preview plates that each display a portion of a shared background motif.  
+Developed as part of the Rueckwand24 Frontend Technical Assessment.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Live Demo
 
-## React Compiler
+**[https://plate-generator.vercel.app](https://plate-generator.vercel.app)**
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+_(Deployed on Vercel)_
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Automatic Default Plate**
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+  - Automatically creates one default plate (250 cm × 128 cm) on load with a predefined motif.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Persistent Configuration**
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+  - All plates and settings are stored in browser `localStorage` and restored after reload.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **Customizable Dimensions**
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+  - Adjustable width (20 – 300 cm) and height (30 – 128 cm) per plate.
+
+- **Locale-Aware Numeric Input**
+
+  - Supports both English (`.`) and German (`,`) decimal separators.
+  - Real-time validation with clear error messages for invalid or out-of-range values.
+
+- **Dynamic Plate Management**
+
+  - Add new plates (up to 10).
+  - Remove any plate except the last one.
+  - Drag and drop to reorder plates visually.
+
+- **Canvas Visualization**
+
+  - Accurate proportional preview at **1 cm = 1 px**.
+  - Plates displayed side-by-side with realistic shadows and rounded corners.
+  - Canvas resizes responsively without distortion.
+
+- **Motif Image Rendering**
+
+  - Shared motif extends across all plates proportionally.
+  - Automatic mirroring when total width > 300 cm for seamless continuity.
+  - Fallback chain: _user upload → remote motif → local asset_.
+
+- **Image Upload**
+
+  - Upload a custom motif from your device; updates preview instantly.
+
+- **Unit Toggle**
+
+  - Switch between **centimeters (cm)** and **inches (in)** with automatic conversion.
+
+- **Export Preview**
+
+  - Export the current layout as a **PNG** image.
+
+- **Responsive & Mobile-Friendly**
+  - Desktop: canvas (left) and controls (right).
+  - Mobile: stacked layout with canvas on top.
+  - Touch-optimized interface throughout.
+
+---
+
+## Tech Stack
+
+- **React + TypeScript**
+- **Vite** (bundler)
+- **HTML Canvas API**
+- **CSS3 / Flexbox / Media Queries**
+- **LocalStorage API**
+- **Vercel** (deployment)
+
+---
+
+## Setup
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/hasnatsamiul/plate-generator.git
+cd plate-generator
+
+# 2. Install dependencies
+npm install
+
+# 3. Run locally
+npm run dev
+#  open http://localhost:5173
+
+# 4. Build for production
+npm run build
+
+# 5. Preview production build
+npm run preview
 ```

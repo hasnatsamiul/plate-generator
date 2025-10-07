@@ -132,17 +132,12 @@ export default function App() {
 
   // ---- Unit conversion ----
   const cmToIn = (cm: number) => cm / 2.54;
-  // const inToCm = (inch: number) => inch * 2.54;
   const toDisplay = (cm: number) => (state.unit === "in" ? cmToIn(cm) : cm);
 
   return (
     <div className="app">
       {/* ======= Title above panels ======= */}
-      <div className="main-header">
-        <div className="title">
-          {/* Maße. <span className="muted">Eingeben.</span> */}
-        </div>
-      </div>
+  
 
       {/* ======= Main Split Layout ======= */}
       <main className="split">
@@ -154,7 +149,7 @@ export default function App() {
           <div className="toolbar">
             
             {/* Language */}
-            <div className="segmented" role="group" aria-label="Language">
+            {/* <div className="segmented" role="group" aria-label="Language">
               <button
                 className={`seg-btn ${state.loc === "de" ? "active" : ""}`}
                 onClick={() => setState((s) => ({ ...s, loc: "de" }))}
@@ -167,7 +162,7 @@ export default function App() {
               >
                 EN
               </button>
-            </div>
+            </div> */}
 
             {/* Units */}
             <div className="segmented" role="group" aria-label="Units">

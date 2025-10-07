@@ -60,6 +60,7 @@ export default function PlateControls({
             onDrop={() => onDrop(i)}
           >
             <div className="group-head">{i + 1}</div>
+
             <div className="row">
               <NumberField
                 label={`Breite (${unit})`}
@@ -90,12 +91,29 @@ export default function PlateControls({
                 −
               </button>
             </div>
+
+            {/* --- Drag handle hint --- */}
+            {reorderPlates && (
+              <div
+                className="drag-hint"
+                style={{
+                  fontSize: "12px",
+                  textAlign: "center",
+                  color: "#888",
+                  marginTop: "4px",
+                  cursor: "grab",
+                  userSelect: "none",
+                }}
+              >
+                ⇅ Drag this plate to reorder
+              </div>
+            )}
           </div>
         );
       })}
 
       <button className="add" onClick={() => addPlate()}>
-        Rückwand hinzufügen  +
+        Rückwand hinzufügen +
       </button>
     </div>
   );
