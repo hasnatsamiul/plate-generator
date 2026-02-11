@@ -1,8 +1,7 @@
 # Plate Generator System
 
 A responsive web application for configuring and visualizing custom wall plates.  
-Users can add, resize, reorder, and preview plates that each display a portion of a shared background motif.  
-Developed as part of the Rueckwand24 Frontend Technical Assessment.
+Users can add, resize, reorder, and preview plates that each display a portion of a shared background motif. 
 
 ---
 
